@@ -58,10 +58,10 @@ export function Workspace() {
           onStop={stop}
         />
       <AnalyticalPanel
-        score={object?.overallScore}
-        strategicFit={object?.frameworkAlignment?.items?.map((item: any) => ({ issue: item, suggestion: "Review alignment criteria" })) as any}
-        indicatorCompliance={object?.narrativeStrengths?.items?.map((item: any) => ({ issue: item, suggestion: "Check target indicator metrics" })) as any}
-        wordingToneRealism={object?.improvementAreas?.items?.map((item: any) => ({ issue: item, suggestion: "Verify operational tone delivery" })) as any}
+        score={(object as any)?.overallScore}
+        strategicFit={(object as any)?.frameworkAlignment?.items?.map((item: any) => ({ issue: item, suggestion: "Review framework alignment parameters" }))}
+        indicatorCompliance={(object as any)?.narrativeStrengths?.items?.map((item: any) => ({ issue: item, suggestion: "Verify target evaluation indicators" }))}
+        wordingToneRealism={(object as any)?.improvementAreas?.items?.map((item: any) => ({ issue: item, suggestion: "Adjust professional wording delivery" }))}
         isLoading={isLoading}
       />
       </main>
