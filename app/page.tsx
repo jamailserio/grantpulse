@@ -89,11 +89,11 @@ export default function GrantPulseWorkspace() {
 
         {/* Right Pane: Analytical Panel (Safely handles undefined streaming data chunks) */}
         <AnalyticalPanel 
-          score={object?.score}
-          strategicFit={object?.strategicFit}
-          indicatorCompliance={object?.indicatorCompliance}
-          wordingToneRealism={object?.wordingToneRealism}
-          isLoading={isLoading}
+        score={object?.score as number}
+        strategicFit={object?.strategicFit as { issue: string; suggestion: string }[]}
+        indicatorCompliance={object?.indicatorCompliance as { issue: string; suggestion: string }[]}
+        wordingToneRealism={object?.wordingToneRealism as { issue: string; suggestion: string }[]}
+        isLoading={isLoading}
         />
       </div>
     </main>
