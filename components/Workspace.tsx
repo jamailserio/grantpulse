@@ -57,11 +57,12 @@ export function Workspace() {
           onAnalyze={handleAnalyze}
           onStop={stop}
         />
-        <AnalyticalPanel
-          analysis={object}
-          isLoading={isLoading}
-          error={error}
-          hasInput={meetsNarrativeBaseline(text)}
+      <AnalyticalPanel
+        score={object?.score as number}
+        strategicFit={object?.strategicFit as { issue: string; suggestion: string }[]}
+        indicatorCompliance={object?.indicatorCompliance as { issue: string; suggestion: string }[]}
+        wordingToneRealism={object?.wordingToneRealism as { issue: string; suggestion: string }[]}
+        isLoading={isLoading}
         />
       </main>
     </div>
