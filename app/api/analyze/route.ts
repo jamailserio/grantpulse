@@ -28,9 +28,8 @@ export async function POST(req: Request) {
       }),
     });
 
-    // 🌟 IMPORTANT FIX: Change from toTextStreamResponse() to toDataStreamResponse()
-    // This adds the "0:" protocol prefixes the useObject hook needs to parse it out!
-    return result.toDataStreamResponse();
+    // ✨ FIXED: Reverting to the correct type-safe method for streamObject
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('API Router Error:', error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
