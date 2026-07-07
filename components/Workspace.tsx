@@ -73,6 +73,7 @@ export default function Workspace() {
         strategicFit={alignmentItems}
         indicatorCompliance={strengthItems}
         wordingToneRealism={improvementItems}
+        rawObject={object}
         isLoading={isLoading}
       />
     </div>
