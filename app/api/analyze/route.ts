@@ -2,9 +2,6 @@ import { openai } from '@ai-sdk/openai';
 import { streamObject } from 'ai';
 import { z } from 'zod';
 
-// 1. REMOVE or comment out the edge runtime line to let serverless handle chunks reliably
-// export const runtime = 'edge';
-
 export async function POST(req: Request) {
   try {
     const { text, framework } = await req.json();
@@ -37,7 +34,6 @@ export async function POST(req: Request) {
       }),
     });
 
-    // 2. Return a pristine stream text response
     return result.toTextStreamResponse();
   } catch (error) {
     console.error('API Router Error:', error);
