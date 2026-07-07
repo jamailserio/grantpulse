@@ -15,9 +15,11 @@ const analysisSchema = z.object({
 export default function Workspace() {
   const [text, setText] = React.useState("");
 
+  // 🌟 Clean initialization with correct structural mode mapping
   const { object, submit, isLoading, error } = useObject({
     api: "/api/analyze",
     schema: analysisSchema,
+    mode: "text"
   });
 
   const handleDirectTrigger = () => {
