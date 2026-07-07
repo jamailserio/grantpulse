@@ -5,17 +5,17 @@ import { experimental_useObject as useObject } from "ai/react";
 import { z } from "zod";
 import AnalyticalPanel from "./AnalyticalPanel";
 
+// 🌟 FIX: Allow all fields to be optional/nullable so partial streams pass validation instantly
 const analysisSchema = z.object({
-  overallScore: z.number().optional(),
-  frameworkAlignment: z.array(z.string()).optional(),
-  narrativeStrengths: z.array(z.string()).optional(),
-  improvementAreas: z.array(z.string()).optional()
+  overallScore: z.number().nullable().optional(),
+  frameworkAlignment: z.array(z.string()).nullable().optional(),
+  narrativeStrengths: z.array(z.string()).nullable().optional(),
+  improvementAreas: z.array(z.string()).nullable().optional()
 });
 
 export default function Workspace() {
   const [text, setText] = React.useState("");
 
-  // 🌟 FIXED: Removed the invalid 'mode' property.
   const { object, submit, isLoading, error } = useObject({
     api: "/api/analyze",
     schema: analysisSchema,
@@ -26,11 +26,11 @@ export default function Workspace() {
     submit({ text, framework: "usaid" });
   };
 
-  // Safe default extraction so the UI never receives an undefined variable map
+  // Safe extractions checking both type structures and raw object formats
   const currentScore = object?.overallScore ?? (object as any)?.overallScore;
-  const alignmentItems = object?.frameworkAlignment ?? (object as any)?.frameworkAlignment ?? [];
-  const strengthItems = object?.narrativeStrengths ?? (object as any)?.narrativeStrengths ?? [];
-  const improvementItems = object?.improvementAreas ?? (object as any)?.improvementAreas ?? [];
+  const alignmentItems = object?.frameworkAlignment ?? (object as any)?.frameworkAlignment;
+  const strengthItems = object?.narrativeStrengths ?? (object as any)?.narrativeStrengths;
+  const improvementItems = object?.improvementAreas ?? (object as any)?.improvementAreas;
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6 max-w-7xl mx-auto h-[calc(100vh-80px)]">
@@ -58,7 +58,7 @@ export default function Workspace() {
           disabled={isLoading || !text.trim()}
           className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold py-3.5 rounded-xl transition text-sm cursor-pointer"
         >
-          {isLoading ? "⚡ Streaming Active Data Matrix..." : "Run Optimization Run"}
+          {isLoading ? "⚡ Streaming Evaluation Matrix..." : "Run Optimization Run"}
         </button>
 
         {error && (
@@ -71,9 +71,9 @@ export default function Workspace() {
       {/* SCORECARD PANEL */}
       <AnalyticalPanel
         score={currentScore}
-        strategicFit={alignmentItems}
-        indicatorCompliance={strengthItems}
-        wordingToneRealism={improvementItems}
+        strategicFit={Array.isArray(alignmentItems) ? alignmentItems : []}
+        indicatorCompliance={Array.isArray(strengthItems) ? strengthItems : []}
+        wordingToneRealism={Array.isArray(improvementItems) ? improvementItems : []}
         rawObject={object}
         isLoading={isLoading}
       />
