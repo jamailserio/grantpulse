@@ -5,12 +5,12 @@ import { experimental_useObject as useObject } from "ai/react";
 import { z } from "zod";
 import AnalyticalPanel from "./AnalyticalPanel";
 
-// The matching validation schema to let the client handle protocol fragments automatically
+// 🛡️ Aligned Client Schema
 const analysisSchema = z.object({
   overallScore: z.number(),
-  frameworkAlignment: z.object({ items: z.array(z.string()) }),
-  narrativeStrengths: z.object({ items: z.array(z.string()) }),
-  improvementAreas: z.object({ items: z.array(z.string()) })
+  frameworkAlignment: z.array(z.string()),
+  narrativeStrengths: z.array(z.string()),
+  improvementAreas: z.array(z.string())
 });
 
 export default function Workspace() {
