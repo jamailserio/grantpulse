@@ -64,13 +64,12 @@ export default function Workspace() {
           </div>
         )}
       </div>
-
       {/* SCORECARD PANEL */}
       <AnalyticalPanel
         score={(object as any)?.overallScore}
-        strategicFit={(object as any)?.frameworkAlignment?.items?.map((item: any) => ({ issue: item, suggestion: "Review framework criteria alignment." }))}
-        indicatorCompliance={(object as any)?.narrativeStrengths?.items?.map((item: any) => ({ issue: item, suggestion: "Review narrative metric strengths." }))}
-        wordingToneRealism={(object as any)?.improvementAreas?.items?.map((item: any) => ({ issue: item, suggestion: "Address target improvement recommendation." }))}
+        strategicFit={(object as any)?.frameworkAlignment?.map((item: any) => ({ issue: item, suggestion: "Review framework criteria alignment." }))}
+        indicatorCompliance={(object as any)?.narrativeStrengths?.map((item: any) => ({ issue: item, suggestion: "Review narrative metric strengths." }))}
+        wordingToneRealism={(object as any)?.improvementAreas?.map((item: any) => ({ issue: item, suggestion: "Address target improvement recommendation." }))}
         isLoading={isLoading}
       />
     </div>
