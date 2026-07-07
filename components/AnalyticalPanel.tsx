@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface AnalyticalPanelProps {
   score?: number;
@@ -8,12 +8,14 @@ interface AnalyticalPanelProps {
   indicatorCompliance?: any[];
   wordingToneRealism?: any[];
   isLoading?: boolean;
+  // Fallback direct object mapping
+  rawObject?: any;
 }
 
 const SECTION_CONFIGS = [
-  { key: "strategicFit", title: "Strategic Fit", icon: "🛡️", color: "border-amber-500" },
-  { key: "indicatorCompliance", title: "Indicator Compliance", icon: "📊", color: "border-emerald-500" },
-  { key: "wordingToneRealism", title: "Wording & Tone Realism", icon: "✍️", color: "border-indigo-500" },
+  { key: "strategicFit", fallbackKey: "frameworkAlignment", title: "Strategic Fit", icon: "🛡️", color: "border-amber-500" },
+  { key: "indicatorCompliance", fallbackKey: "narrativeStrengths", title: "Indicator Compliance", icon: "📊", color: "border-emerald-500" },
+  { key: "wordingToneRealism", fallbackKey: "improvementAreas", title: "Wording & Tone Realism", icon: "✍️", color: "border-indigo-500" },
 ];
 
 export default function AnalyticalPanel({
@@ -22,8 +24,16 @@ export default function AnalyticalPanel({
   indicatorCompliance = [],
   wordingToneRealism = [],
   isLoading = false,
+  rawObject = {}
 }: AnalyticalPanelProps) {
-  const [openSection, setOpenSection] = useState<string | null>("strategicFit");
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  // Automatically open the first section when loading starts so you see data stream live
+  useEffect(() => {
+    if (isLoading && !openSection) {
+      setOpenSection("strategicFit");
+    }
+  }, [isLoading, openSection]);
 
   const getScoreStyles = (currentScore?: number) => {
     if (currentScore === undefined || currentScore === null) return "bg-slate-100 text-slate-400 border-slate-200";
@@ -32,11 +42,14 @@ export default function AnalyticalPanel({
     return "bg-emerald-50 text-emerald-700 border-emerald-300 font-extrabold";
   };
 
+  // Extract the arrays from explicitly passed props OR fall back directly to the raw object keys
   const dataMap: Record<string, any[]> = {
-    strategicFit,
-    indicatorCompliance,
-    wordingToneRealism,
+    strategicFit: strategicFit.length ? strategicFit : (rawObject?.frameworkAlignment || []),
+    indicatorCompliance: indicatorCompliance.length ? indicatorCompliance : (rawObject?.narrativeStrengths || []),
+    wordingToneRealism: wordingToneRealism.length ? wordingToneRealism : (rawObject?.improvementAreas || []),
   };
+
+  const finalScore = score ?? rawObject?.overallScore;
 
   return (
     <div className="w-full md:w-[480px] bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col h-full overflow-y-auto">
@@ -45,8 +58,8 @@ export default function AnalyticalPanel({
       </h2>
 
       <div className="flex items-center space-x-4 p-4 rounded-xl bg-slate-50 border border-slate-100 mb-6">
-        <div className={`h-16 w-16 rounded-full border-2 flex items-center justify-center font-bold text-xl transition-all duration-300 ${getScoreStyles(score)}`}>
-          {score !== undefined ? `${Math.round(score)}%` : "--"}
+        <div className={`h-16 w-16 rounded-full border-2 flex items-center justify-center font-bold text-xl transition-all duration-300 ${getScoreStyles(finalScore)}`}>
+          {finalScore !== undefined ? `${Math.round(finalScore)}%` : "--"}
         </div>
         <div>
           <p className="text-sm font-bold text-slate-800">Overall Compliance Index</p>
@@ -74,7 +87,7 @@ export default function AnalyticalPanel({
       {isLoading && (
         <div className="mt-4 p-3 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center space-x-2 text-xs text-slate-400">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span>Ingesting secure LLM tokens natively...</span>
+          <span>Streaming deep evaluation metrics live...</span>
         </div>
       )}
     </div>
@@ -103,24 +116,19 @@ function AccordionSection({ title, icon, borderColor, summary, isOpen, onToggle 
         <div className="p-4 bg-white divide-y divide-slate-100/60 max-h-[300px] overflow-y-auto">
           {validItems.length > 0 ? (
             validItems.map((item: any, idx: number) => {
-              // Extract text whether item is a primitive string or a mapped object
               const displayIssue = typeof item === "string" ? item : item?.issue || "";
-              const displaySuggestion = typeof item === "string" ? "Review configuration parameters." : item?.suggestion || "";
-
+              
               return (
                 <div key={idx} className={`py-3.5 first:pt-0 last:pb-0 border-l-4 ${borderColor} pl-3.5 my-2 bg-slate-50/40 rounded-r-lg`}>
-                  <strong className="text-xs text-slate-800 block font-semibold mb-1.5 leading-snug">
-                    ⚠️ {displayIssue}
-                  </strong>
-                  <span className="text-xs text-emerald-800 block bg-emerald-50/50 p-2.5 rounded-md border border-emerald-100/70 leading-relaxed">
-                    💡 Recommendation: {displaySuggestion}
+                  <span className="text-xs text-slate-800 block font-medium leading-relaxed">
+                    ✨ {displayIssue}
                   </span>
                 </div>
               );
             })
           ) : (
             <p className="text-xs text-slate-400 italic py-3 text-center">
-              No structural alignment issues flag this component dimension.
+              Awaiting data stream processing for this milestone index...
             </p>
           )}
         </div>
