@@ -28,8 +28,9 @@ export async function POST(req: Request) {
       }),
     });
 
-    // Converts the object stream to a reliable text stream matching the frontend hook
-    return result.toTextStreamResponse();
+    // 🌟 IMPORTANT FIX: Change from toTextStreamResponse() to toDataStreamResponse()
+    // This adds the "0:" protocol prefixes the useObject hook needs to parse it out!
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error('API Router Error:', error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
