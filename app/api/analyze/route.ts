@@ -1,6 +1,5 @@
 import { openai } from '@ai-sdk/openai';
-import { streamObject } from 'ai';
-import { z } from 'zod';
+import { streamText } from 'ai';
 
 export async function POST(req: Request) {
   try {
@@ -12,31 +11,27 @@ export async function POST(req: Request) {
 
     const systemPrompt = `
       You are an expert institutional grant compliance auditor.
-      Rigorously evaluate the project narrative against the selected donor framework: "${framework ? framework.toUpperCase() : 'USAID'}".
-      Provide an aggregate score (0-100) and specific improvement item arrays for each dimension.
+      Analyze the proposal text against the donor framework: "${framework || 'USAID'}".
+      You MUST respond with a single, raw JSON object. Do not include markdown formatting or backticks.
+      
+      JSON Structure:
+      {
+        "overallScore": 85,
+        "frameworkAlignment": ["Issue 1", "Issue 2"],
+        "narrativeStrengths": ["Strength 1"],
+        "improvementAreas": ["Area 1"]
+      }
     `;
 
-    const result = await streamObject({
-      model: openai('gpt-4o-mini'), 
+    const result = await streamText({
+      model: openai('gpt-4o-mini'),
       system: systemPrompt,
       prompt: `Analyze this proposal narrative:\n\n${text}`,
-      schema: z.object({
-        overallScore: z.number().min(0).max(100),
-        frameworkAlignment: z.object({
-          items: z.array(z.string())
-        }),
-        narrativeStrengths: z.object({
-          items: z.array(z.string())
-        }),
-        improvementAreas: z.object({
-          items: z.array(z.string())
-        })
-      }),
     });
 
-    return result.toTextStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error) {
-    console.error('API Router Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    console.error('API Error:', error);
+    return new Response(JSON.stringify({ error: 'Internal Error' }), { status: 500 });
   }
 }
