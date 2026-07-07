@@ -6,72 +6,57 @@ import AnalyticalPanel from "./AnalyticalPanel";
 export default function Workspace() {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState<{
-    overallScore?: number;
-    frameworkAlignment?: string[];
-    narrativeStrengths?: string[];
-    improvementAreas?: string[];
-  }>({});
+  const [debugLog, setDebugLog] = useState<string>("System initialized. Ready for text.");
+  const [analysisData, setAnalysisData] = useState<any>({});
 
   const handleDirectTrigger = async () => {
-    if (!text.trim() || isLoading) return;
-    
+    setDebugLog("Button clicked. Starting analysis...");
     setIsLoading(true);
-    setError(null);
-    setAnalysisData({});
 
     try {
+      setDebugLog("Sending POST request to /api/analyze...");
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, framework: "usaid" }),
+        body: JSON.stringify({ text: text || "Sample proposal text to bypass empty inputs", framework: "usaid" }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
-      }
+      setDebugLog(`Server responded with status: ${response.status}`);
+      if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
 
       const reader = response.body?.getReader();
+      if (!reader) throw new Error("No readable stream channel available.");
+
       const decoder = new TextDecoder();
-      let accumulatedText = "";
+      let rawBuffer = "";
 
-      if (!reader) {
-        throw new Error("ReadableStream not supported by browser channel.");
-      }
-
+      setDebugLog("Reading data stream...");
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        // Decode binary chunk to string string
         const chunk = decoder.decode(value, { stream: true });
-        accumulatedText += chunk;
+        rawBuffer += chunk;
 
-        // Clean out Vercel stream-protocol framing noise if present
-        let cleanText = accumulatedText
-          .replace(/^\d+:"/gm, "")
-          .replace(/"$/gm, "")
-          .replace(/\\n/g, "\n")
-          .replace(/\\"/g, '"');
+        // Strip text protocol anomalies if present
+        let clean = rawBuffer.replace(/^\d+:"/gm, "").replace(/"$/gm, "");
 
-        // Extract valid JSON boundaries from stream accumulation
-        const firstBrace = cleanText.indexOf("{");
-        const lastBrace = cleanText.lastIndexOf("}");
+        const start = clean.indexOf("{");
+        const end = clean.lastIndexOf("}");
 
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        if (start !== -1 && end !== -1 && end > start) {
           try {
-            const potentialJson = cleanText.substring(firstBrace, lastBrace + 1);
-            const parsed = JSON.parse(potentialJson);
+            const parsed = JSON.parse(clean.substring(start, end + 1));
             setAnalysisData(parsed);
+            setDebugLog(`Data updating live! Score: ${parsed.overallScore || "Processing"}`);
           } catch (e) {
-            // Incomplete JSON fragment chunk; continue accumulating
+            // Keep waiting for data completion
           }
         }
       }
+      setDebugLog("Stream parsing complete!");
     } catch (err: any) {
-      console.error("Pipeline breakdown:", err);
-      setError(err.message || "Failed to stream processing units.");
+      setDebugLog(`Pipeline Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -81,13 +66,10 @@ export default function Workspace() {
     <div className="flex flex-col md:flex-row gap-6 p-6 max-w-7xl mx-auto h-[calc(100vh-80px)]">
       {/* INPUT INTERFACE */}
       <div className="flex-1 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-5 h-full">
-        <div className="flex justify-between items-center mb-4">
+        <div className="mb-4">
           <label className="text-sm font-bold text-slate-700 tracking-wide uppercase block">
             Project Narrative Segment
           </label>
-          <span className="text-xs text-slate-400 font-mono bg-slate-50 border border-slate-100 px-2 py-1 rounded">
-            {text.split(/\s+/).filter(Boolean).length} words
-          </span>
         </div>
 
         <textarea
@@ -97,20 +79,18 @@ export default function Workspace() {
           className="flex-1 w-full p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm resize-none mb-4 shadow-inner"
         />
 
+        {/* Dynamic status log bar right inside the view */}
+        <div className="mb-3 p-2.5 bg-slate-900 text-amber-400 font-mono text-[11px] rounded-lg border border-slate-800 shadow-sm">
+          📟 Status: {debugLog}
+        </div>
+
         <button
           type="button"
           onClick={handleDirectTrigger}
-          disabled={isLoading || !text.trim()}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold py-3.5 rounded-xl transition text-sm cursor-pointer shadow-sm"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition text-sm cursor-pointer shadow-md active:translate-y-0.5"
         >
-          {isLoading ? "⚡ Parsing Infrastructure Streams..." : "Run Optimization Run"}
+          {isLoading ? "⚡ Running Processing Stream..." : "Run Optimization Run"}
         </button>
-
-        {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-600 font-mono">
-            Error: {error}
-          </div>
-        )}
       </div>
 
       {/* COMPLIANCE CARD */}
