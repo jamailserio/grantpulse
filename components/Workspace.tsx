@@ -1,90 +1,76 @@
 "use client";
 
 import React, { useState } from "react";
+import { experimental_useObject as useObject } from "ai/react";
+import { z } from "zod";
 import AnalyticalPanel from "./AnalyticalPanel";
+
+// The matching validation schema to let the client handle protocol fragments automatically
+const analysisSchema = z.object({
+  overallScore: z.number(),
+  frameworkAlignment: z.object({ items: z.array(z.string()) }),
+  narrativeStrengths: z.object({ items: z.array(z.string()) }),
+  improvementAreas: z.object({ items: z.array(z.string()) })
+});
 
 export default function Workspace() {
   const [text, setText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [analysisData, setAnalysisData] = useState<any>(null);
 
-  const handleDirectTrigger = async () => {
+  // Use the native SDK hook which natively parses the '0:"..."' protocol packets
+  const { object, submit, isLoading, error } = useObject({
+    api: "/api/analyze",
+    schema: analysisSchema,
+  });
+
+  const handleDirectTrigger = () => {
     if (!text.trim() || isLoading) return;
-    
-    setIsLoading(true);
-    setAnalysisData(null);
-
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, framework: "usaid" }),
-      });
-
-      if (!response.ok) throw new Error("Server error");
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedText = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          const chunk = decoder.decode(value, { stream: true });
-          // Strip out typical Vercel AI SDK data streaming prefixes if present
-          const cleanChunk = chunk.replace(/^0:"|^e:/gm, "").replace(/"$/gm, "");
-          accumulatedText += cleanChunk;
-
-          try {
-            // Attempt to look for complete JSON blocks inside the stream
-            const jsonStart = accumulatedText.indexOf("{");
-            const jsonEnd = accumulatedText.lastIndexOf("}");
-            if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-              const rawJson = accumulatedText.substring(jsonStart, jsonEnd + 1);
-              const parsed = JSON.parse(rawJson);
-              setAnalysisData(parsed);
-            }
-          } catch (e) {
-            // Wait for next chunk to form a complete JSON object string
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Fetch operational error:", err);
-    } finally {
-      setIsLoading(false);
-    }
+    submit({ text, framework: "usaid" });
   };
 
   return (
     <div className="flex flex-col md:flex-row gap-6 p-6 max-w-7xl mx-auto h-[calc(100vh-80px)]">
+      {/* INPUT PANEL */}
       <div className="flex-1 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-5 h-full">
-        <label className="text-sm font-bold text-slate-700 tracking-wide uppercase block mb-4">
-          Project Narrative Segment
-        </label>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <label className="text-sm font-bold text-slate-700 tracking-wide uppercase block">
+              Project Narrative Segment
+            </label>
+          </div>
+          <span className="text-xs text-slate-400 font-mono bg-slate-50 border border-slate-100 px-2 py-1 rounded">
+            {text.split(/\s+/).filter(Boolean).length} words
+          </span>
+        </div>
+
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Paste your operational proposal narrative segment here..."
           className="flex-1 w-full p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm resize-none mb-4"
         />
+
         <button
           type="button"
           onClick={handleDirectTrigger}
           disabled={isLoading || !text.trim()}
           className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold py-3.5 rounded-xl transition text-sm cursor-pointer"
         >
-          {isLoading ? "⚡ Parsing Narrative Streams..." : "Run Optimization Run"}
+          {isLoading ? "⚡ Streaming Analytics..." : "Run Optimization Run"}
         </button>
+
+        {error && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-600">
+            Pipeline Connection Alert: {error.message}
+          </div>
+        )}
       </div>
 
+      {/* SCORECARD PANEL */}
       <AnalyticalPanel
-        score={analysisData?.overallScore}
-        strategicFit={analysisData?.frameworkAlignment?.map((item: string) => ({ issue: item, suggestion: "Align with framework specifications." }))}
-        indicatorCompliance={analysisData?.narrativeStrengths?.map((item: string) => ({ issue: item, suggestion: "Review target criteria parameters." }))}
-        wordingToneRealism={analysisData?.improvementAreas?.map((item: string) => ({ issue: item, suggestion: "Refine professional wording delivery." }))}
+        score={(object as any)?.overallScore}
+        strategicFit={(object as any)?.frameworkAlignment?.items?.map((item: any) => ({ issue: item, suggestion: "Review framework criteria alignment." }))}
+        indicatorCompliance={(object as any)?.narrativeStrengths?.items?.map((item: any) => ({ issue: item, suggestion: "Review narrative metric strengths." }))}
+        wordingToneRealism={(object as any)?.improvementAreas?.items?.map((item: any) => ({ issue: item, suggestion: "Address target improvement recommendation." }))}
         isLoading={isLoading}
       />
     </div>
